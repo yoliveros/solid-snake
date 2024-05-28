@@ -1,31 +1,14 @@
-import { Index, Match, Switch, onMount, } from 'solid-js'
+import { Index, Match, Switch, createMemo, onCleanup, onMount, } from 'solid-js'
 import SnakeBody from './SnakeBody'
 import './App.css'
-import { createStore } from 'solid-js/store'
+import { createStore, produce } from 'solid-js/store'
 
 const GRID_SIZE = 20
-const SPEED = 200
+const SPEED = 100
 
 interface ICell {
     x: number
     y: number
-}
-
-interface IState {
-    snake: SnakeBody<ICell>
-    board: number[][]
-    food: ICell
-    score: number
-}
-
-const init_node: ICell = { x: 7, y: 10 }
-const init_food: ICell = { x: 0, y: 0 }
-
-const initial_state: IState = {
-    snake: new SnakeBody({ value: init_node }),
-    board: [...new Array(GRID_SIZE)].map(() => new Array(GRID_SIZE).fill(0)),
-    food: init_food,
-    score: 0
 }
 
 const directions = {
@@ -34,6 +17,26 @@ const directions = {
     left: { x: -1, y: 0 },
     right: { x: 1, y: 0 },
 }
+
+interface IState {
+    snake: SnakeBody<ICell>
+    board: number[][]
+    food: ICell
+    score: number
+    direction: keyof typeof directions
+}
+
+const init_node: ICell = { x: 7, y: 10 }
+const init_food: ICell = { x: 0, y: 0 }
+
+const initial_state: IState = {
+    snake: new SnakeBody({ value: init_node }),
+    board: [...new Array(GRID_SIZE)].map(() => new Array(GRID_SIZE).fill(0)),
+    direction: "right",
+    food: init_food,
+    score: 0
+}
+
 
 enum CellType {
     Empty = 0,
@@ -48,8 +51,16 @@ function App() {
         generateSnake()
         generateFood()
 
+        document.addEventListener("keyup", changeDirection)
+
         // TODO: implement timer
-        setInterval(() => moveSnake(state, "right"), SPEED)
+        setInterval(() => {
+            moveSnake(state)
+        }, SPEED)
+    })
+
+    onCleanup(() => {
+        document.removeEventListener("keyup", changeDirection)
     })
 
     function restart(): void {
@@ -58,39 +69,54 @@ function App() {
             new Array(GRID_SIZE).fill(0)
         ))
         setState("food", init_food)
+        setState("direction", "right")
         setState("score", 0)
 
         generateSnake()
         generateFood()
     }
 
-    function moveSnake(
-        state: IState,
-        direction: keyof typeof directions
-    ): void {
-        const head = state.snake.peek() as ICell
+    function moveSnake(state: IState): void {
+        const head = state.snake.first() as ICell
+        const tail = state.snake.last() as ICell
+
         const new_head = {
-            x: head.x + directions[direction].x,
-            y: head.y + directions[direction].y
+            x: head.x + directions[state.direction].x,
+            y: head.y + directions[state.direction].y
         }
+
         if (new_head.x < 0
             || new_head.x >= GRID_SIZE
             || new_head.y < 0
-            || new_head.y >= GRID_SIZE) {
+            || new_head.y >= GRID_SIZE
+            || state.board[new_head.x][new_head.y] === CellType.Snake) {
             // alert("Game over")
 
             restart()
             return
         }
+
+        setState("board", produce((board) => {
+            if (board[new_head.x][new_head.y] === CellType.Food) {
+                generateFood()
+                state.snake.append(new_head)
+            }
+            else {
+                board[tail.x][tail.y] = CellType.Empty
+            }
+
+            board[new_head.x][new_head.y] = CellType.Snake
+
+        }))
+        setState("snake", new SnakeBody({ value: new_head }))
     }
 
     function generateSnake(): void {
-        const snake_head = state.snake.peek() as ICell
+        const snake_head = state.snake.first() as ICell
         setState("board", [snake_head.x], [snake_head.y], CellType.Snake)
     }
 
     function generateFood(): void {
-
         const food = {
             x: Math.floor(Math.random() * GRID_SIZE),
             y: Math.floor(Math.random() * GRID_SIZE)
@@ -104,8 +130,46 @@ function App() {
         setState("board", [food.x], [food.y], CellType.Food)
     }
 
+    function changeDirection(keyUp: KeyboardEvent): void {
+        const curr_direction = state.direction
+        let new_direction = curr_direction
+        switch (keyUp.code) {
+            case "KeyW":
+            case "ArrowUp":
+                if (curr_direction !== "down")
+                    new_direction = "up"
+                break
+            case "KeyA":
+            case "ArrowLeft":
+                if (curr_direction !== "right")
+                    new_direction = "left"
+                break
+            case "KeyS":
+            case "ArrowDown":
+                if (curr_direction !== "up")
+                    new_direction = "down"
+                break
+            case "KeyD":
+            case "ArrowRight":
+                if (curr_direction !== "left")
+                    new_direction = "right"
+                break
+            default:
+                return
+        }
+
+        if (new_direction === curr_direction)
+            return
+
+        setState("direction", new_direction)
+    }
+
+    function eat(): void {
+
+    }
+
     return (
-        <>
+        <main>
             <h1>Solid Snake</h1>
             <div class="score">Score: {state.score}</div>
             <Index each={state.board}>
@@ -129,7 +193,7 @@ function App() {
                     </div>
                 }
             </Index>
-        </>
+        </main>
     )
 }
 
