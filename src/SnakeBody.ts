@@ -4,7 +4,7 @@ type SNode<T> = {
     prev?: SNode<T>
 }
 
-/** LinkedList implementation */
+/** DoubleLinkedList implementation */
 export default class SnakeBody<T> {
     private length: number
     private head?: SNode<T>
