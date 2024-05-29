@@ -1,4 +1,4 @@
-import { Index, Match, Switch, createMemo, onCleanup, onMount, } from 'solid-js'
+import { Index, Match, Switch, onCleanup, onMount, } from 'solid-js'
 import SnakeBody from './SnakeBody'
 import './App.css'
 import { createStore, produce } from 'solid-js/store'
