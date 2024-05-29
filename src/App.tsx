@@ -77,12 +77,17 @@ function App() {
     }
 
     function moveSnake(state: IState): void {
-        const head = state.snake.first() as ICell
-        const tail = state.snake.last() as ICell
+        const head = state.snake.first()?.value as ICell
+        const tail = state.snake.last()?.value as ICell
 
         const new_head = {
             x: head.x + directions[state.direction].x,
             y: head.y + directions[state.direction].y
+        }
+
+        const new_tail = {
+            x: tail.x + directions[state.direction].x,
+            y: tail.y + directions[state.direction].y
         }
 
         if (new_head.x < 0
@@ -90,29 +95,30 @@ function App() {
             || new_head.y < 0
             || new_head.y >= GRID_SIZE
             || state.board[new_head.x][new_head.y] === CellType.Snake) {
-            // alert("Game over")
+            alert("Game over")
 
             restart()
             return
         }
 
-        setState("board", produce((board) => {
-            if (board[new_head.x][new_head.y] === CellType.Food) {
+        setState(produce((curr_state) => {
+            if (curr_state.board[new_head.x][new_head.y] === CellType.Food) {
+                curr_state.score += 1
+                curr_state.snake.append(new_tail)
                 generateFood()
-                state.snake.append(new_head)
             }
             else {
-                board[tail.x][tail.y] = CellType.Empty
+                curr_state.board[tail.x][tail.y] = CellType.Empty
             }
 
-            board[new_head.x][new_head.y] = CellType.Snake
-
+            curr_state.snake.prepend(new_head)
+            curr_state.snake.pop()
+            curr_state.board[new_head.x][new_head.y] = CellType.Snake
         }))
-        setState("snake", new SnakeBody({ value: new_head }))
     }
 
     function generateSnake(): void {
-        const snake_head = state.snake.first() as ICell
+        const snake_head = state.snake.first()?.value as ICell
         setState("board", [snake_head.x], [snake_head.y], CellType.Snake)
     }
 
@@ -162,10 +168,6 @@ function App() {
             return
 
         setState("direction", new_direction)
-    }
-
-    function eat(): void {
-
     }
 
     return (
