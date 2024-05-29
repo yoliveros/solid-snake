@@ -107,7 +107,7 @@ function App() {
             || new_head.y < 0
             || new_head.y >= GRID_SIZE
             || state.board[new_head.x][new_head.y] === CellType.Snake) {
-            // alert("Game over")
+            alert("Game over")
 
             restart()
             return
