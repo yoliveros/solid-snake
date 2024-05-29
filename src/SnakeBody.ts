@@ -11,6 +11,11 @@ export default class SnakeBody<T> {
     private tail?: SNode<T>
 
     constructor(init_node?: SNode<T>) {
+        if (!init_node) {
+            this.length = 0
+            return
+        }
+
         this.head = this.tail = init_node
         this.length = 1
     }
@@ -47,10 +52,10 @@ export default class SnakeBody<T> {
 
     /** Remove element from the end of the list */
     pop(): void {
-        this.length--
         if (!this.tail) {
             return
         }
+        this.length--
 
         const current_tail = this.tail
         this.tail = current_tail.prev

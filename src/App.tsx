@@ -23,6 +23,7 @@ interface IState {
     board: number[][]
     food: ICell
     score: number
+    best_score: number
     direction: keyof typeof directions
 }
 
@@ -34,7 +35,8 @@ const initial_state: IState = {
     board: [...new Array(GRID_SIZE)].map(() => new Array(GRID_SIZE).fill(0)),
     direction: "right",
     food: init_food,
-    score: 0
+    score: 0,
+    best_score: 0
 }
 
 
@@ -53,6 +55,12 @@ function App() {
 
         document.addEventListener("keyup", changeDirection)
 
+        if (!localStorage.getItem("pbs")) {
+            localStorage.setItem("pbs", '0')
+        } else {
+            setState("best_score", parseInt(localStorage.getItem("pbs")!))
+        }
+
         // TODO: implement timer
         setInterval(() => {
             moveSnake(state)
@@ -70,6 +78,10 @@ function App() {
         ))
         setState("food", init_food)
         setState("direction", "right")
+        if (state.score > parseInt(localStorage.getItem("pbs")!)) {
+            localStorage.setItem("pbs", state.score.toString())
+            setState("best_score", state.score)
+        }
         setState("score", 0)
 
         generateSnake()
@@ -95,7 +107,7 @@ function App() {
             || new_head.y < 0
             || new_head.y >= GRID_SIZE
             || state.board[new_head.x][new_head.y] === CellType.Snake) {
-            alert("Game over")
+            // alert("Game over")
 
             restart()
             return
@@ -174,6 +186,7 @@ function App() {
         <main>
             <h1>Solid Snake</h1>
             <div class="score">Score: {state.score}</div>
+            <div class="score">Best: {state.best_score}</div>
             <Index each={state.board}>
                 {i =>
                     <div class="grid-cell">
