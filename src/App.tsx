@@ -11,11 +11,18 @@ interface ICell {
     y: number
 }
 
-const directions = {
+interface Dir {
+    up: ICell
+    down: ICell
+    left: ICell
+    right: ICell
+}
+
+const directions: Dir = {
     up: { x: 0, y: -1 },
     down: { x: 0, y: 1 },
     left: { x: -1, y: 0 },
-    right: { x: 1, y: 0 },
+    right: { x: 1, y: 0 }
 }
 
 interface IState {
@@ -28,22 +35,21 @@ interface IState {
 }
 
 const init_node: ICell = { x: 7, y: 10 }
-const init_food: ICell = { x: 0, y: 0 }
 
 const initial_state: IState = {
     snake: new SnakeBody({ value: init_node }),
     board: [...new Array(GRID_SIZE)].map(() => new Array(GRID_SIZE).fill(0)),
     direction: "right",
-    food: init_food,
+    food: { x: 0, y: 0 },
     score: 0,
     best_score: 0
 }
 
 
 enum CellType {
-    Empty = 0,
-    Snake = 1,
-    Food = 2
+    Empty,
+    Snake,
+    Food
 }
 
 function App() {
@@ -63,7 +69,7 @@ function App() {
 
         // TODO: implement timer
         setInterval(() => {
-            moveSnake(state)
+            moveSnake()
         }, SPEED)
     })
 
@@ -72,32 +78,33 @@ function App() {
     })
 
     function restart(): void {
-        setState("snake", new SnakeBody({ value: init_node }))
-        setState("board", [...new Array(GRID_SIZE)].map(() =>
-            new Array(GRID_SIZE).fill(0)
-        ))
-        setState("food", init_food)
-        setState("direction", "right")
-        if (state.score > parseInt(localStorage.getItem("pbs")!)) {
-            localStorage.setItem("pbs", state.score.toString())
-            setState("best_score", state.score)
-        }
-        setState("score", 0)
+        setState(produce((curr_state) => {
+            curr_state.snake = new SnakeBody({ value: init_node })
+            curr_state.board = [...new Array(GRID_SIZE)].map(() =>
+                new Array(GRID_SIZE).fill(0)
+            )
+            curr_state.direction = 'right'
+            if (curr_state.score > curr_state.best_score) {
+                localStorage.setItem('pbs', state.score.toString())
+                curr_state.best_score = curr_state.score
+            }
+            curr_state.score = 0
+        }))
 
         generateSnake()
         generateFood()
     }
 
-    function moveSnake(state: IState): void {
+    function moveSnake(): void {
         const head = state.snake.first()?.value as ICell
         const tail = state.snake.last()?.value as ICell
 
-        const new_head = {
+        const new_head: ICell = {
             x: head.x + directions[state.direction].x,
             y: head.y + directions[state.direction].y
         }
 
-        const new_tail = {
+        const new_tail: ICell = {
             x: tail.x + directions[state.direction].x,
             y: tail.y + directions[state.direction].y
         }
@@ -135,7 +142,7 @@ function App() {
     }
 
     function generateFood(): void {
-        const food = {
+        const food: ICell = {
             x: Math.floor(Math.random() * GRID_SIZE),
             y: Math.floor(Math.random() * GRID_SIZE)
         }

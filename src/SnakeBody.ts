@@ -52,10 +52,10 @@ export default class SnakeBody<T> {
 
     /** Remove element from the end of the list */
     pop(): void {
+        this.length--
         if (!this.tail) {
             return
         }
-        this.length--
 
         const current_tail = this.tail
         this.tail = current_tail.prev
